@@ -129,6 +129,8 @@ class Tar(BaseArchive):
         extension           = (args.extension or 'tar')
         exclude             = args.exclude
         include             = args.include
+        path_filter_search  = args.path_filter_search
+        path_filter_replace = args.path_filter_replace
         package_metadata    = args.package_meta
         timestamp           = self.helpers.get_timestamp(
             scm_object,
@@ -150,6 +152,10 @@ class Tar(BaseArchive):
         for exc in exclude:
             pat = fnmatch.translate(os.path.join(topdir, exc))
             excl_patterns.append(re.compile(pat))
+
+        path_pattern = None
+        if path_filter_search:
+            path_pattern = re.compile(path_filter_search)
 
         def tar_exclude(filename):
             """
@@ -180,6 +186,11 @@ class Tar(BaseArchive):
         def tar_filter(tarinfo):
             if tar_exclude(tarinfo.name):
                 return None
+
+            if path_pattern and path_filter_replace is not None:
+                tarinfo.name = re.sub(
+                    path_pattern, path_filter_replace, tarinfo.name
+                )
 
             return reset(tarinfo)
 
